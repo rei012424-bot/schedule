@@ -13,8 +13,8 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
         }
-        /* Custom scrollbar for sleek look */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -33,8 +33,21 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
+    <div id="customAlertModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center animate-in fade-in zoom-in duration-200">
+            <div id="alertIconContainer" class="w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mx-auto mb-4 text-xl">
+                <i class="fa-solid fa-bell" id="alertIcon"></i>
+            </div>
+            <h3 id="alertTitle" class="text-base font-bold text-slate-800 mb-2">通知</h3>
+            <p id="alertMessage" class="text-xs text-slate-600 mb-6 leading-relaxed">メッセージがここに表示されます。</p>
+            <div id="alertButtons" class="flex space-x-2 justify-center">
+                <button type="button" id="alertOkBtn" onclick="closeCustomAlert(true)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition w-full cursor-pointer">OK</button>
+            </div>
+        </div>
+    </div>
+
     <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col lg:flex-row justify-between items-center gap-4">
             <div class="flex items-center space-x-3">
                 <div class="bg-white/10 p-2.5 rounded-xl backdrop-blur-sm">
                     <i class="fa-solid fa-clock-rotate-left text-2xl text-amber-300"></i>
@@ -46,28 +59,15 @@
             </div>
             
             <div class="flex flex-wrap items-center gap-2">
-                <!-- カレンダー連携ドロップダウン / ボタン -->
-                <div class="relative">
-                    <button onclick="toggleCalendarMenu()" class="bg-indigo-700 hover:bg-indigo-800 text-white text-xs sm:text-sm px-3.5 py-2 rounded-xl font-medium transition flex items-center space-x-2 shadow-sm border border-indigo-500/55">
-                        <i class="fa-solid fa-calendar-plus text-amber-300"></i>
-                        <span>カレンダー連携</span>
-                        <i class="fa-solid fa-chevron-down text-xs ml-1"></i>
-                    </button>
-                    <div id="calendarMenu" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 text-slate-700">
-                        <button onclick="exportToICS()" class="w-full text-left px-4 py-2.5 text-xs hover:bg-slate-50 flex items-center space-x-2 transition">
-                            <i class="fa-solid fa-file-arrow-down text-indigo-600 w-4"></i>
-                            <span>iCalファイル(.ics)をダウンロード</span>
-                        </button>
-                        <button onclick="exportToGoogleCalendar()" class="w-full text-left px-4 py-2.5 text-xs hover:bg-slate-50 flex items-center space-x-2 transition">
-                            <i class="fa-solid fa-globe text-indigo-600 w-4"></i>
-                            <span>Googleカレンダーに追加リンク</span>
-                        </button>
-                    </div>
-                </div>
+                <!-- Google Calendar 1-Click Batch Quick Add Button -->
+                <button type="button" onclick="openGoogleCalendarBatchHelper()" class="bg-amber-400 hover:bg-amber-300 text-indigo-950 text-xs sm:text-sm px-4 py-2.5 rounded-xl font-bold transition flex items-center space-x-2 shadow-sm cursor-pointer">
+                    <i class="fa-brands fa-google text-indigo-950"></i>
+                    <span>Googleカレンダーへ一括登録</span>
+                </button>
 
-                <button onclick="openTemplateModal()" class="bg-indigo-700 hover:bg-indigo-800 text-white text-xs sm:text-sm px-3.5 py-2 rounded-xl font-medium transition flex items-center space-x-2 shadow-sm border border-indigo-500/55">
+                <button type="button" onclick="openTemplateModal()" class="bg-indigo-700 hover:bg-indigo-800 text-white text-xs sm:text-sm px-3.5 py-2.5 rounded-xl font-medium transition flex items-center space-x-2 shadow-sm border border-indigo-500/55 cursor-pointer">
                     <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
-                    <span>テンプレート</span>
+                    <span>テンプレート管理</span>
                 </button>
                 <div id="nightReminderBadge" class="hidden bg-amber-400 text-amber-950 px-3 py-1.5 rounded-xl text-xs font-bold animate-pulse flex items-center space-x-1.5">
                     <i class="fa-solid fa-moon"></i>
@@ -85,21 +85,21 @@
             <!-- Date Navigator & Action Bar -->
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div class="flex items-center space-x-3">
-                    <button onclick="changeDate(-1)" class="p-2 rounded-xl hover:bg-slate-100 text-slate-600 transition"><i class="fa-solid fa-chevron-left"></i></button>
+                    <button type="button" onclick="changeDate(-1)" class="p-2 rounded-xl hover:bg-slate-100 text-slate-600 transition cursor-pointer"><i class="fa-solid fa-chevron-left"></i></button>
                     <div class="text-center">
                         <span id="currentDateDisplay" class="text-lg font-bold text-slate-800">2026年9月18日(金)</span>
                         <p id="scheduleModeTag" class="text-xs text-indigo-600 font-medium">明日（先取り作成中）</p>
                     </div>
-                    <button onclick="changeDate(1)" class="p-2 rounded-xl hover:bg-slate-100 text-slate-600 transition"><i class="fa-solid fa-chevron-right"></i></button>
-                    <button onclick="setToday()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-medium transition">今日へ</button>
+                    <button type="button" onclick="changeDate(1)" class="p-2 rounded-xl hover:bg-slate-100 text-slate-600 transition cursor-pointer"><i class="fa-solid fa-chevron-right"></i></button>
+                    <button type="button" onclick="setToday()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-medium transition cursor-pointer">今日へ</button>
                 </div>
 
                 <div class="flex items-center space-x-2 w-full sm:w-auto">
-                    <button onclick="openAddTaskModal()" class="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition shadow-sm flex items-center justify-center space-x-2">
+                    <button type="button" onclick="openAddTaskModal()" class="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition shadow-sm flex items-center justify-center space-x-2 cursor-pointer">
                         <i class="fa-solid fa-plus"></i>
                         <span>ブロック追加</span>
                     </button>
-                    <button onclick="clearDaySchedule()" class="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition" title="スケジュールをリセット">
+                    <button type="button" onclick="clearDaySchedule()" class="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition cursor-pointer" title="スケジュールをリセット">
                         <i class="fa-solid fa-trash-can text-sm"></i>
                     </button>
                 </div>
@@ -114,7 +114,7 @@
                     </h2>
                     <div class="text-xs text-slate-500 font-medium flex items-center space-x-4">
                         <span class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span><span>固定ルーティン</span></span>
-                        <span class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block"></span><span>自由に確保</span></span>
+                        <span class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block"></span><span>自己投資</span></span>
                     </div>
                 </div>
 
@@ -126,7 +126,7 @@
 
         </section>
 
-        <!-- Right 1 Col: Insights, 21:00 Prompt & Tips -->
+        <!-- Right 1 Col: Insights & Quick Tips -->
         <section class="space-y-6">
             
             <!-- 21:00 Night Prompt Card -->
@@ -143,7 +143,7 @@
                     <p class="text-xs text-indigo-200 leading-relaxed mb-4">
                         時間を先に確保することでやりたいことが現実になります。夜21時に明日の空き時間をブロックしましょう！
                     </p>
-                    <button onclick="prepareTomorrow()" class="w-full bg-amber-400 hover:bg-amber-300 text-indigo-950 font-bold py-2.5 px-4 rounded-xl text-sm transition shadow-sm flex items-center justify-center space-x-2">
+                    <button type="button" onclick="prepareTomorrow()" class="w-full bg-amber-400 hover:bg-amber-300 text-indigo-950 font-bold py-2.5 px-4 rounded-xl text-sm transition shadow-sm flex items-center justify-center space-x-2 cursor-pointer">
                         <i class="fa-solid fa-forward"></i>
                         <span>明日のスケジュールを今すぐ作成する</span>
                     </button>
@@ -159,7 +159,7 @@
                 <div class="space-y-4">
                     <div>
                         <div class="flex justify-between text-xs font-semibold mb-1">
-                            <span class="text-slate-600">固定ルーティン (体重測定・歯磨き等)</span>
+                            <span class="text-slate-600">固定ルーティン (体重・歯磨き等)</span>
                             <span id="fixedHoursText" class="text-slate-800">0h</span>
                         </div>
                         <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
@@ -169,7 +169,7 @@
 
                     <div>
                         <div class="flex justify-between text-xs font-semibold mb-1">
-                            <span class="text-slate-600">自己投資・やりたいこと (読書・資料作成等)</span>
+                            <span class="text-slate-600">自己投資・やりたいこと (読書等)</span>
                             <span id="investmentHoursText" class="text-slate-800">0h</span>
                         </div>
                         <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
@@ -187,9 +187,6 @@
                         </div>
                     </div>
                 </div>
-                <div class="mt-4 pt-4 border-t border-slate-100 text-xs text-slate-500 text-center" id="totalAllocatedTip">
-                    24時間のうち、しっかりと時間を確保できています！
-                </div>
             </div>
 
             <!-- Philosophy Card -->
@@ -199,7 +196,7 @@
                     <span>時間を先に確保するコツ</span>
                 </h4>
                 <p class="text-xs text-amber-800/90 leading-relaxed">
-                    「空いた時間で読書や資料作成をしよう」と思っても、気づけばスマホや雑務で一日が終わってしまいます。<strong>朝や日中のうちに「8:00〜9:00 読書」とカレンダーに先にブロックを置く</strong>ことが、未来の自分を変える第一歩です。
+                    「空いた時間で読書や資料作成をしよう」と思っても、気づけばスマホや雑務で一日が終わってしまいます。<strong>朝や日中のうちに「8:00〜9:00 読書」とカレンダーに先にブロックを置く</strong>ことが未来の自分を変える第一歩です。
                 </p>
             </div>
 
@@ -207,12 +204,41 @@
 
     </main>
 
-    <!-- Add/Edit Task Modal -->
+    <div id="gcalBatchModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-100 animate-in fade-in zoom-in duration-200">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-base font-bold text-slate-800 flex items-center space-x-2">
+                    <i class="fa-brands fa-google text-indigo-600"></i>
+                    <span>Googleカレンダーへ一括登録</span>
+                </h3>
+                <button type="button" onclick="closeGoogleCalendarBatchHelper()" class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-slate-600 mb-4 leading-relaxed">
+                下のボタンを1回押すだけで、本日のすべてのスケジュールをGoogleカレンダーへ順番にワンクリック登録できます。（ブラウザのポップアップ許可を有効にしてください）
+            </p>
+
+            <div class="mb-6">
+                <button type="button" onclick="openAllCalendarTabsSequentially()" class="w-full bg-amber-400 hover:bg-amber-300 text-indigo-950 p-3.5 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2 shadow-sm cursor-pointer">
+                    <i class="fa-solid fa-bolt text-sm"></i>
+                    <span>本日の全予定をGoogleカレンダーに一括反映する</span>
+                </button>
+            </div>
+
+            <div id="gcalBatchListContainer" class="space-y-2.5 mb-6 max-h-[35vh] overflow-y-auto pr-1">
+                <!-- Dynamically populated batch items -->
+            </div>
+
+            <div class="flex justify-end">
+                <button type="button" onclick="closeGoogleCalendarBatchHelper()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer">閉じる</button>
+            </div>
+        </div>
+    </div>
+
     <div id="taskModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100 animate-in fade-in zoom-in duration-200">
             <div class="flex justify-between items-center mb-4">
                 <h3 id="modalTitle" class="text-base font-bold text-slate-800">タイムブロックの追加</h3>
-                <button onclick="closeAddTaskModal()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <button type="button" onclick="closeAddTaskModal()" class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <form id="taskForm" onsubmit="saveTask(event)" class="space-y-4">
                 <input type="hidden" id="taskId">
@@ -220,7 +246,8 @@
                     <label class="block text-xs font-bold text-slate-700 mb-1">タイトル</label>
                     <input type="text" id="taskTitle" required placeholder="例: 読書（ビジネス書）、資料作成" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition">
                 </div>
-                <div class="grid grid-cols-2 gap-4">
+                <!-- Time Input UI layout with vertical stack to prevent overlap -->
+                <div class="space-y-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">開始時間</label>
                         <input type="time" id="taskStart" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition">
@@ -234,8 +261,8 @@
                     <label class="block text-xs font-bold text-slate-700 mb-1">ブロック種類</label>
                     <select id="taskCategory" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition">
                         <option value="fixed">固定ルーティン（体重・歯磨き・食事など）</option>
-                        <option value="investment">自由・自己投資（読書・資料作成など）</option>
-                        <option value="rest">自由・休息（自由時間など）</option>
+                        <option value="investment">自己投資・やりたいこと（読書・資料作成など）</option>
+                        <option value="rest">自由・休息時間</option>
                     </select>
                 </div>
                 <div>
@@ -243,60 +270,134 @@
                     <textarea id="taskDesc" rows="2" placeholder="具体的なタスク内容やゴール" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition resize-none"></textarea>
                 </div>
                 <div class="flex justify-end space-x-3 pt-2">
-                    <button type="button" onclick="closeAddTaskModal()" class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">キャンセル</button>
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition">保存する</button>
+                    <button type="button" onclick="closeAddTaskModal()" class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer">キャンセル</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition cursor-pointer">保存する</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Template Modal -->
     <div id="templateModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-100 animate-in fade-in zoom-in duration-200">
+        <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl border border-slate-100 animate-in fade-in zoom-in duration-200">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-base font-bold text-slate-800">ルーティン・テンプレート一括適用</h3>
-                <button onclick="closeTemplateModal()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <h3 class="text-base font-bold text-slate-800">テンプレート管理・切替</h3>
+                <button type="button" onclick="closeTemplateModal()" class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <p class="text-xs text-slate-600 mb-4">
-                平日の標準、仕事集中型に加え、休日用のゆったり充実型テンプレートを選択できます。
+                平日用や休日用のテンプレートを今日のスケジュールにワンタッチで適用できます。また、現在のスケジュールを新しいテンプレートとして保存することも可能です。
             </p>
-            <div class="space-y-3 mb-6 max-h-[60vh] overflow-y-auto pr-1">
-                <div onclick="applyStandardTemplate()" class="p-4 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/50 cursor-pointer transition group">
-                    <div class="flex justify-between items-center mb-1">
-                        <h4 class="text-sm font-bold text-slate-800 group-hover:text-indigo-600">平日：朝の固定ルーティン ＋ 自由自己投資型</h4>
-                        <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded">平日おすすめ</span>
-                    </div>
-                    <p class="text-xs text-slate-500">起床・体重測定・朝食に加え、午前読書・日中資料作成・夜の自由時間を確保します。</p>
-                </div>
 
-                <div onclick="applyWorkHeavyTemplate()" class="p-4 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/50 cursor-pointer transition group">
-                    <div class="flex justify-between items-center mb-1">
-                        <h4 class="text-sm font-bold text-slate-800 group-hover:text-indigo-600">平日：ビジネス・集中構築型</h4>
-                        <span class="text-xs bg-indigo-100 text-indigo-800 font-semibold px-2 py-0.5 rounded">ワーク</span>
-                    </div>
-                    <p class="text-xs text-slate-500">午前中に最も重要度の高い資料作成やタスクを先取りしてガッツリ確保するスケジュール。</p>
-                </div>
-
-                <div onclick="applyHolidayTemplate()" class="p-4 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/50 cursor-pointer transition group">
-                    <div class="flex justify-between items-center mb-1">
-                        <h4 class="text-sm font-bold text-slate-800 group-hover:text-indigo-600">休日：ゆったり充実・趣味・自己投資型</h4>
-                        <span class="text-xs bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded">休日おすすめ</span>
-                    </div>
-                    <p class="text-xs text-slate-500">少し遅めの起床と丁寧な朝食からスタート。午後は趣味やまとまった読書、リフレッシュ時間を先に確保！</p>
-                </div>
+            <div class="flex justify-between items-center mb-2">
+                <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide">登録済みテンプレート</h4>
+                <button type="button" onclick="openSaveAsTemplateModal()" class="text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-semibold px-3 py-1.5 rounded-xl transition flex items-center space-x-1.5 cursor-pointer">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>今のスケジュールをテンプレート化</span>
+                </button>
             </div>
+
+            <div id="templatesListContainer" class="space-y-3 mb-6 max-h-[50vh] overflow-y-auto pr-1">
+                <!-- Dynamically populated templates -->
+            </div>
+
             <div class="flex justify-end">
-                <button onclick="closeTemplateModal()" class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">閉じる</button>
+                <button type="button" onclick="closeTemplateModal()" class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer">閉じる</button>
             </div>
         </div>
     </div>
 
+    <div id="saveTemplateModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100 animate-in fade-in zoom-in duration-200">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-base font-bold text-slate-800">テンプレートとして保存</h3>
+                <button type="button" onclick="closeSaveAsTemplateModal()" class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="saveCurrentAsTemplate(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">テンプレート名</label>
+                    <input type="text" id="newTemplateName" required placeholder="例: 週末・リフレッシュ休日" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/25 transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">説明・タグ</label>
+                    <input type="text" id="newTemplateDesc" placeholder="例: 趣味とインプットを充実させる日" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/25 transition">
+                </div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeSaveAsTemplateModal()" class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer">キャンセル</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition cursor-pointer">保存する</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
+        let alertCallback = null;
+        function showCustomAlert(title, message, isConfirm = false, onConfirm = null) {
+            document.getElementById('alertTitle').innerText = title;
+            document.getElementById('alertMessage').innerText = message;
+            const buttonsContainer = document.getElementById('alertButtons');
+            
+            if (isConfirm) {
+                alertCallback = onConfirm;
+                buttonsContainer.innerHTML = `
+                    <button type="button" onclick="closeCustomAlert(false)" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex-1 cursor-pointer">キャンセル</button>
+                    <button type="button" onclick="closeCustomAlert(true)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition flex-1 cursor-pointer">OK</button>
+                `;
+            } else {
+                alertCallback = null;
+                buttonsContainer.innerHTML = `
+                    <button type="button" onclick="closeCustomAlert(true)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition w-full cursor-pointer">OK</button>
+                `;
+            }
+            document.getElementById('customAlertModal').classList.remove('hidden');
+        }
+
+        function closeCustomAlert(result) {
+            document.getElementById('customAlertModal').classList.add('hidden');
+            if (alertCallback && typeof alertCallback === 'function') {
+                alertCallback(result);
+            }
+            alertCallback = null;
+        }
+
         // State management
         let currentDate = new Date();
         let schedulesData = JSON.parse(localStorage.getItem('time_master_schedules')) || {};
+        
+        // Default templates including weekday and holiday
+        let customTemplates = JSON.parse(localStorage.getItem('time_master_templates')) || [
+            {
+                id: 'std_weekday',
+                name: '【平日用】朝ルーティン ＋ 自己投資型',
+                tag: '平日おすすめ',
+                tagColor: 'bg-emerald-100 text-emerald-800',
+                desc: '起床・体重測定・朝食に加え、午前読書や日中資料作成を先取り確保するスタンダード構成。',
+                tasks: [
+                    { id: 'w1', title: '起床・体重測定・歯磨き', start: '07:00', end: '07:30', category: 'fixed', desc: '毎朝の健康管理ルーティン' },
+                    { id: 'w2', title: '朝食・コーヒータイム', start: '07:30', end: '08:00', category: 'fixed', desc: 'ゆったり朝の準備' },
+                    { id: 'w3', title: '読書（インプット・自己投資）', start: '08:00', end: '09:00', category: 'investment', desc: '時間を先に確保して知識を蓄える' },
+                    { id: 'w4', title: '資料作成・重要業務', start: '09:00', end: '11:00', category: 'investment', desc: '一番エネルギーが高い午前中に集中' },
+                    { id: 'w5', title: 'ランチ＆リフレッシュ', start: '12:00', end: '13:00', category: 'rest', desc: '昼食と軽い散歩' },
+                    { id: 'w6', title: '夕方ストレッチ・リセット', start: '18:00', end: '18:30', category: 'fixed', desc: '心身のコンディショニング' },
+                    { id: 'w7', title: '明日のスケジュール先取り確認', start: '21:00', end: '21:15', category: 'fixed', desc: '夜21時の重要ルーティン' }
+                ]
+            },
+            {
+                id: 'std_holiday',
+                name: '【休日用】ゆったり充実・趣味・自己投資型',
+                tag: '休日おすすめ',
+                tagColor: 'bg-amber-100 text-amber-800',
+                desc: '少し遅めの起床と丁寧な朝食。午後はまとまった読書やリフレッシュ時間を先にブロック！',
+                tasks: [
+                    { id: 'h1', title: 'ゆったり起床・体重測定・歯磨き', start: '08:00', end: '08:40', category: 'fixed', desc: '休日のリフレッシュ起床' },
+                    { id: 'h2', title: '丁寧な朝食 ＆ コーヒー', start: '08:40', end: '09:30', category: 'fixed', desc: '時間をかけて味わう朝' },
+                    { id: 'h3', title: 'まとまった読書（自己投資）', start: '10:00', end: '11:30', category: 'investment', desc: '平日に読めなかった本をじっくり' },
+                    { id: 'h4', title: 'ランチ ＆ カフェ散歩', start: '12:00', end: '13:30', category: 'rest', desc: '外の空気を吸ってリフレッシュ' },
+                    { id: 'h5', title: '自由時間・趣味・映画鑑賞', start: '14:00', end: '17:00', category: 'rest', desc: '心ゆくまでリラックス' },
+                    { id: 'h6', title: '夜の軽いストレッチ・入浴', start: '19:30', end: '20:30', category: 'fixed', desc: '明日に備えるリラックス' },
+                    { id: 'h7', title: '来週のスケジュール先取り確認', start: '21:00', end: '21:15', category: 'fixed', desc: '未来の時間を確保する習慣' }
+                ]
+            }
+        ];
 
-        // Helper to format date as YYYY-MM-DD
         function formatDateKey(date) {
             const y = date.getFullYear();
             const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -304,101 +405,91 @@
             return `${y}-${m}-${d}`;
         }
 
-        // Get tomorrow's date
         function getTomorrowDate() {
             const tom = new Date();
             tom.setDate(tom.getDate() + 1);
             return tom;
         }
 
-        // Initialize default data if empty for tomorrow
         function initDefaultDataIfNeeded(dateKey) {
             if (!schedulesData[dateKey]) {
-                schedulesData[dateKey] = [
-                    { id: '1', title: '起床・体重測定・歯磨き', start: '07:00', end: '07:30', category: 'fixed', desc: '毎朝の体調管理とルーティン' },
-                    { id: '2', title: '朝食・身支度', start: '07:30', end: '08:00', category: 'fixed', desc: 'しっかり栄養補給' },
-                    { id: '3', title: '読書（ビジネス・自己投資）', start: '08:00', end: '09:00', category: 'investment', desc: '時間を先に確保して知識をインプット' },
-                    { id: '4', title: '資料作成・重要タスク集中', start: '09:00', end: '11:00', category: 'investment', desc: '脳が最も働く午前中にコアワーク' },
-                    { id: '5', title: 'ランチ・リフレッシュ', start: '12:00', end: '13:00', category: 'rest', desc: '軽い散歩と昼食' }
-                ];
+                schedulesData[dateKey] = JSON.parse(JSON.stringify(customTemplates[0].tasks));
                 saveToLocalStorage();
             }
         }
 
         function saveToLocalStorage() {
-            localStorage.setItem('time_master_schedules', JSON.stringify(schedulesData));
-        }
-
-        // Toggle Calendar Export Menu
-        function toggleCalendarMenu() {
-            const menu = document.getElementById('calendarMenu');
-            menu.classList.toggle('hidden');
-        }
-
-        // Close menu when clicking outside
-        window.addEventListener('click', function(e) {
-            if (!e.target.closest('button[onclick="toggleCalendarMenu()"]') && !e.target.closest('#calendarMenu')) {
-                document.getElementById('calendarMenu').classList.add('hidden');
+            try {
+                localStorage.setItem('time_master_schedules', JSON.stringify(schedulesData));
+                localStorage.setItem('time_master_templates', JSON.stringify(customTemplates));
+            } catch (e) {
+                console.error('Storage save error:', e);
             }
-        });
+        }
 
-        // Export to iCal (.ics) file
-        function exportToICS() {
+        // Generate Google Calendar direct event URL for single task
+        function getGoogleCalendarUrl(task, dateKey) {
+            const yyyymmdd = dateKey.replace(/-/g, '');
+            const startClean = task.start.replace(':', '');
+            const endClean = task.end.replace(':', '');
+            const text = encodeURIComponent(task.title);
+            const details = encodeURIComponent(task.desc || 'TimeMaster タイムブロック');
+            const dates = `${yyyymmdd}T${startClean}00/${yyyymmdd}T${endClean}00`;
+            return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}`;
+        }
+
+        // Open Google Calendar Batch Helper Modal
+        function openGoogleCalendarBatchHelper() {
             const key = formatDateKey(currentDate);
             const tasks = schedulesData[key] || [];
             if (tasks.length === 0) {
-                alert('エクスポートするスケジュールがありません。');
+                showCustomAlert('お知らせ', '登録されているスケジュールがありません。');
                 return;
             }
 
-            const yyyymmdd = key.replace(/-/g, '');
-            let icsContent = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//TimeMaster Time Blocking App//JP\nCALSCALE:GREGORIAN\nMETHOD:PUBLISH\n";
+            tasks.sort((a, b) => a.start.localeCompare(b.start));
+            const container = document.getElementById('gcalBatchListContainer');
+            container.innerHTML = '';
 
-            tasks.forEach(task => {
-                const startClean = task.start.replace(':', '');
-                const endClean = task.end.replace(':', '');
-                icsContent += "BEGIN:VEVENT\n";
-                icsContent += `DTSTART:${yyyymmdd}T${startClean}00\n`;
-                icsContent += `DTEND:${yyyymmdd}T${endClean}00\n`;
-                icsContent += `SUMMARY:${task.title}\n`;
-                if (task.desc) {
-                    icsContent += `DESCRIPTION:${task.desc}\n`;
-                }
-                icsContent += "END:VEVENT\n";
+            tasks.forEach((task, index) => {
+                const url = getGoogleCalendarUrl(task, key);
+                const item = document.createElement('div');
+                item.className = 'p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between gap-3';
+                item.innerHTML = `
+                    <div class="min-w-0">
+                        <p class="text-xs font-bold text-slate-800 truncate">${escapeHtml(task.title)}</p>
+                        <p class="text-[11px] text-slate-500">${task.start} 〜 ${task.end}</p>
+                    </div>
+                    <a href="${url}" target="_blank" rel="noopener noreferrer" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition shrink-0 flex items-center space-x-1.5 shadow-sm">
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                        <span>追加</span>
+                    </a>
+                `;
+                container.appendChild(item);
             });
 
-            icsContent += "END:VCALENDAR";
-
-            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-            const link = document.createElement('a');
-            link.href = window.URL.createObjectURL(blob);
-            link.download = `timemaster_${key}.ics`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            document.getElementById('calendarMenu').classList.add('hidden');
+            document.getElementById('gcalBatchModal').classList.remove('hidden');
         }
 
-        // Export to Google Calendar (opens new tab with first event or link search)
-        function exportToGoogleCalendar() {
+        // Sequentially open tabs with a brief timeout to avoid popup blocking
+        function openAllCalendarTabsSequentially() {
             const key = formatDateKey(currentDate);
             const tasks = schedulesData[key] || [];
-            if (tasks.length === 0) {
-                alert('連携するスケジュールがありません。');
-                return;
-            }
+            if (tasks.length === 0) return;
 
-            // Google Calendar accepts direct creation URL for a single event, or we can prompt user. Let's open the first task or provide general info
-            const firstTask = tasks[0];
-            const yyyymmdd = key.replace(/-/g, '');
-            const datesParam = `${yyyymmdd}T${firstTask.start.replace(':', '')}00/${yyyymmdd}T${firstTask.end.replace(':', '')}00`;
-            const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(firstTask.title)}&dates=${datesParam}&details=${encodeURIComponent(firstTask.desc || '')}`;
-            
-            window.open(gcalUrl, '_blank');
-            document.getElementById('calendarMenu').classList.add('hidden');
+            tasks.forEach((task, index) => {
+                const url = getGoogleCalendarUrl(task, key);
+                setTimeout(() => {
+                    window.open(url, '_blank');
+                }, index * 600); // 0.6秒間隔で連続タブオープン
+            });
+            closeGoogleCalendarBatchHelper();
         }
 
-        // Check if current time is around 21:00 to highlight reminder
+        function closeGoogleCalendarBatchHelper() {
+            document.getElementById('gcalBatchModal').classList.add('hidden');
+        }
+
         function checkNightReminder() {
             const now = new Date();
             const hour = now.getHours();
@@ -410,7 +501,6 @@
             }
         }
 
-        // Render application view
         function renderApp() {
             const key = formatDateKey(currentDate);
             initDefaultDataIfNeeded(key);
@@ -434,9 +524,9 @@
 
             renderTimeline(schedulesData[key] || []);
             updateStats(schedulesData[key] || []);
+            renderTemplatesModalList();
         }
 
-        // Render Timeline items
         function renderTimeline(tasks) {
             const container = document.getElementById('timelineContainer');
             container.innerHTML = '';
@@ -446,13 +536,14 @@
                     <div class="text-center py-12">
                         <div class="text-slate-300 text-4xl mb-3"><i class="fa-solid fa-calendar-xmark"></i></div>
                         <p class="text-sm font-bold text-slate-700">予定が登録されていません</p>
-                        <p class="text-xs text-slate-400 mt-1">「ブロック追加」または「テンプレート」で時間を先に確保しましょう！</p>
+                        <p class="text-xs text-slate-400 mt-1">「ブロック追加」または「テンプレート管理」で時間を先に確保しましょう！</p>
                     </div>
                 `;
                 return;
             }
 
             tasks.sort((a, b) => a.start.localeCompare(b.start));
+            const currentKey = formatDateKey(currentDate);
 
             tasks.forEach(task => {
                 let borderLeft = '';
@@ -464,6 +555,8 @@
                 } else {
                     borderLeft = 'border-l-4 border-amber-400';
                 }
+
+                const gcalUrl = getGoogleCalendarUrl(task, currentKey);
 
                 const item = document.createElement('div');
                 item.className = `relative pl-10 group`;
@@ -483,10 +576,14 @@
                             ${task.desc ? `<p class="text-xs text-slate-500 pl-1">${escapeHtml(task.desc)}</p>` : ''}
                         </div>
                         <div class="flex items-center space-x-2 self-end sm:self-center">
-                            <button onclick="openEditTaskModal('${task.id}')" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition" title="編集">
+                            <a href="${gcalUrl}" target="_blank" rel="noopener noreferrer" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center space-x-1 shadow-sm cursor-pointer" title="Googleカレンダーに追加">
+                                <i class="fa-brands fa-google text-[11px]"></i>
+                                <span>Gカレンダー</span>
+                            </a>
+                            <button type="button" onclick="openEditTaskModal('${task.id}')" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition cursor-pointer" title="編集">
                                 <i class="fa-solid fa-pen text-xs"></i>
                             </button>
-                            <button onclick="deleteTask('${task.id}')" class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition" title="削除">
+                            <button type="button" onclick="deleteTask('${task.id}')" class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition cursor-pointer" title="削除">
                                 <i class="fa-solid fa-trash text-xs"></i>
                             </button>
                         </div>
@@ -496,7 +593,30 @@
             });
         }
 
-        // Calculate and update stats
+        function renderTemplatesModalList() {
+            const container = document.getElementById('templatesListContainer');
+            container.innerHTML = '';
+
+            customTemplates.forEach(tmpl => {
+                const item = document.createElement('div');
+                item.className = 'p-4 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/30 transition group flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3';
+                item.innerHTML = `
+                    <div class="cursor-pointer flex-grow" onclick="applyTemplate('${tmpl.id}')">
+                        <div class="flex items-center space-x-2 mb-1">
+                            <h4 class="text-sm font-bold text-slate-800 group-hover:text-indigo-600">${escapeHtml(tmpl.name)}</h4>
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded ${tmpl.tagColor || 'bg-slate-100 text-slate-700'}">${escapeHtml(tmpl.tag || 'カスタム')}</span>
+                        </div>
+                        <p class="text-xs text-slate-500">${escapeHtml(tmpl.desc || '')}</p>
+                    </div>
+                    <div class="flex items-center space-x-2 self-end sm:self-center">
+                        <button type="button" onclick="applyTemplate('${tmpl.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition shadow-sm cursor-pointer">適用</button>
+                        <button type="button" onclick="deleteTemplate('${tmpl.id}')" class="text-slate-400 hover:text-red-500 p-2 rounded-lg transition cursor-pointer" title="テンプレート削除"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
         function updateStats(tasks) {
             let fixedMinutes = 0;
             let investmentMinutes = 0;
@@ -524,7 +644,6 @@
             document.getElementById('freeBar').style.width = Math.min(100, (restMinutes / totalDayMinutes) * 100 * 3) + '%';
         }
 
-        // Navigation
         function changeDate(days) {
             currentDate.setDate(currentDate.getDate() + days);
             renderApp();
@@ -541,7 +660,6 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Modal Controls
         function openAddTaskModal() {
             document.getElementById('modalTitle').innerText = 'タイムブロックの追加';
             document.getElementById('taskId').value = '';
@@ -578,7 +696,16 @@
             document.getElementById('templateModal').classList.add('hidden');
         }
 
-        // Task CRUD
+        function openSaveAsTemplateModal() {
+            document.getElementById('newTemplateName').value = '';
+            document.getElementById('newTemplateDesc').value = '';
+            document.getElementById('saveTemplateModal').classList.remove('hidden');
+        }
+
+        function closeSaveAsTemplateModal() {
+            document.getElementById('saveTemplateModal').classList.add('hidden');
+        }
+
         function saveTask(event) {
             event.preventDefault();
             const id = document.getElementById('taskId').value;
@@ -622,68 +749,79 @@
         }
 
         function clearDaySchedule() {
-            if (confirm('この日のスケジュールをすべてリセットしますか？')) {
-                const key = formatDateKey(currentDate);
-                schedulesData[key] = [];
-                saveToLocalStorage();
-                renderApp();
+            showCustomAlert('確認', 'この日のスケジュールをすべてリセットしますか？', true, (confirmed) => {
+                if (confirmed) {
+                    const key = formatDateKey(currentDate);
+                    schedulesData[key] = [];
+                    saveToLocalStorage();
+                    renderApp();
+                }
+            });
+        }
+
+        function applyTemplate(tmplId) {
+            const tmpl = customTemplates.find(t => t.id === tmplId);
+            if (!tmpl) return;
+
+            const key = formatDateKey(currentDate);
+            schedulesData[key] = tmpl.tasks.map(t => ({
+                ...t,
+                id: 't_' + Math.random().toString(36).substring(2, 9)
+            }));
+
+            saveToLocalStorage();
+            closeTemplateModal();
+            renderApp();
+        }
+
+        function deleteTemplate(tmplId) {
+            if (customTemplates.length <= 1) {
+                showCustomAlert('お知らせ', '最低1つのテンプレートを残す必要があります。');
+                return;
             }
+            showCustomAlert('確認', 'このテンプレートを削除しますか？', true, (confirmed) => {
+                if (confirmed) {
+                    customTemplates = customTemplates.filter(t => t.id !== tmplId);
+                    saveToLocalStorage();
+                    renderApp();
+                }
+            });
         }
 
-        // Templates
-        function applyStandardTemplate() {
+        function saveCurrentAsTemplate(event) {
+            event.preventDefault();
+            const name = document.getElementById('newTemplateName').value;
+            const desc = document.getElementById('newTemplateDesc').value;
             const key = formatDateKey(currentDate);
-            schedulesData[key] = [
-                { id: '1', title: '起床・体重測定・歯磨き', start: '07:00', end: '07:30', category: 'fixed', desc: '毎朝の健康チェック' },
-                { id: '2', title: '朝食・コーヒータイム', start: '07:30', end: '08:00', category: 'fixed', desc: 'ゆったり朝の準備' },
-                { id: '3', title: '読書（自己投資タイム）', start: '08:00', end: '09:00', category: 'investment', desc: '先に時間を確保してインプット' },
-                { id: '4', title: '資料作成・重要業務', start: '09:00', end: '11:00', category: 'investment', desc: '集中タイムブロック' },
-                { id: '5', title: 'ランチ・リフレッシュ', start: '12:00', end: '13:00', category: 'rest', desc: '昼食と散歩' },
-                { id: '6', title: '夕方ルーティン・ストレッチ', start: '18:00', end: '18:30', category: 'fixed', desc: '心身のリセット' },
-                { id: '7', title: '明日のスケジュール確認（21時）', start: '21:00', end: '21:15', category: 'fixed', desc: '時間を先に確保する習慣' }
-            ];
+            const currentTasks = schedulesData[key] || [];
+
+            if (currentTasks.length === 0) {
+                showCustomAlert('お知らせ', 'テンプレート化するスケジュールが空です。');
+                return;
+            }
+
+            const newTmpl = {
+                id: 'tmpl_' + Date.now(),
+                name: name,
+                tag: 'マイテンプレート',
+                tagColor: 'bg-purple-100 text-purple-800',
+                desc: desc || 'カスタム保存されたスケジュール構成',
+                tasks: JSON.parse(JSON.stringify(currentTasks))
+            };
+
+            customTemplates.push(newTmpl);
             saveToLocalStorage();
+            closeSaveAsTemplateModal();
             closeTemplateModal();
             renderApp();
         }
 
-        function applyWorkHeavyTemplate() {
-            const key = formatDateKey(currentDate);
-            schedulesData[key] = [
-                { id: 'w1', title: '起床・朝のルーティン', start: '06:30', end: '07:15', category: 'fixed', desc: '体重測定・歯磨き・白湯' },
-                { id: 'w2', title: '最優先プロジェクト・資料作成', start: '08:00', end: '11:00', category: 'investment', desc: '黄金の午前中ブロック' },
-                { id: 'w3', title: 'ランチ休憩', start: '12:00', end: '13:00', category: 'rest', desc: '休息' },
-                { id: 'w4', title: 'スキルアップ学習・読書', start: '20:00', end: '21:00', category: 'investment', desc: '夜の自由時間を先取り確保' }
-            ];
-            saveToLocalStorage();
-            closeTemplateModal();
-            renderApp();
-        }
-
-        function applyHolidayTemplate() {
-            const key = formatDateKey(currentDate);
-            schedulesData[key] = [
-                { id: 'h1', title: 'ゆったり起床・体重測定・歯磨き', start: '08:00', end: '08:40', category: 'fixed', desc: '休日のリフレッシュ朝ルーティン' },
-                { id: 'h2', title: '丁寧な朝食 ＆ コーヒー', start: '08:40', end: '09:30', category: 'fixed', desc: 'ゆっくり味わう朝の時間' },
-                { id: 'h3', title: 'まとまった読書（自己投資）', start: '10:00', end: '11:30', category: 'investment', desc: '平日に読めなかった本をじっくりインプット' },
-                { id: 'h4', title: 'ランチ ＆ カフェ散歩', start: '12:00', end: '13:30', category: 'rest', desc: '外の空気を吸ってリフレッシュ' },
-                { id: 'h5', title: '自由時間・趣味・映画鑑賞', start: '14:00', end: '17:00', category: 'rest', desc: '心ゆくまでリラックス' },
-                { id: 'h6', title: '夜の軽いストレッチ・入浴', start: '19:30', end: '20:30', category: 'fixed', desc: '明日に備えるコンディショニング' },
-                { id: 'h7', title: '来週のスケジュール先取り確認', start: '21:00', end: '21:15', category: 'fixed', desc: '未来の時間を確保する習慣' }
-            ];
-            saveToLocalStorage();
-            closeTemplateModal();
-            renderApp();
-        }
-
-        // HTML Escape helper
         function escapeHtml(str) {
             return str.replace(/[&<>'"]/g, 
                 tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
             );
         }
 
-        // Initial load
         window.onload = function() {
             const now = new Date();
             if (now.getHours() >= 21) {
